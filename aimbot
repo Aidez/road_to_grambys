@@ -1,0 +1,107 @@
+local Key = "V"
+
+if game.PlaceId ~= 5796917097 then
+    return
+end
+
+repeat wait() until game.Players ~= nil
+repeat wait() until game.Players.LocalPlayer ~= nil
+
+local mouse = game.Players.LocalPlayer:GetMouse()
+local active = false
+local target = nil
+
+local meta = getrawmetatable(game)
+local newindex = meta.__newindex
+setreadonly(meta,false)
+
+meta.__newindex=newcclosure(function(self,k,new)
+    if tostring(k) == "CFrame" and tostring(self) == "Camera" and active and target ~= nil then
+        if target.FindFirstChild(target, "Head") then
+            local altered = CFrame.new(new.p,target.Head.CFrame.p)
+            return newindex(self,k,altered)
+        end
+    end
+    return newindex(self,k,new)
+end)
+
+function IsInTable(table, tofind)
+    local found = false
+    for i,v in pairs(table) do
+        if v == tofind then
+            found = true
+            break
+        end
+    end
+    return found
+end
+
+local function GetClosestPlayer()
+    local LowestDistance = math.huge
+    local ClosestCharacter = nil
+    local Characters = {}
+    for i,v in pairs(game.Workspace.Characters:GetChildren()) do
+        if not IsInTable(Characters, v) and v.Name ~= game.Players.LocalPlayer.Name then
+            table.insert(Characters, v)
+        end
+    end
+    for i,v in pairs(Characters) do
+        if v ~= nil then
+            if v:FindFirstChild("HumanoidRootPart") and v.Name ~= game.Players.LocalPlayer.Name then
+                local InitialDis = (v.HumanoidRootPart.Position - game.Workspace.CurrentCamera.CFrame.p).magnitude
+                local Ray = Ray.new(game.Workspace.CurrentCamera.CFrame.p, (mouse.Hit.p - game.Workspace.CurrentCamera.CFrame.p).unit * InitialDis)
+                local Part,Position = game.Workspace:FindPartOnRay(Ray, game.Workspace)
+                local FinalDifference = math.floor((Position - v.HumanoidRootPart.Position).magnitude)
+                if FinalDifference < LowestDistance then
+                    ClosestCharacter = v
+                    LowestDistance = FinalDifference
+                end
+            end
+        end
+    end
+    if ClosestCharacter ~= nil then
+        return ClosestCharacter -- easier in this situation
+    end
+end
+
+
+game:GetService("UserInputService").InputBegan:Connect(function(keyobject, shithappening)
+    if keyobject.KeyCode == Enum.KeyCode[Key] then 
+        active = true
+    end
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(keyobject, shithappening)
+    if keyobject.KeyCode == Enum.KeyCode[Key] then
+        active = false
+        target = nil
+    end
+end)
+
+
+game:GetService('RunService').Stepped:connect(function()
+    if active then
+        target = GetClosestPlayer()
+    end
+end)
+
+--[[
+ 
+                                                        ..                                          
+                                     /yys.            `hMM/                                        
+                    :ys:            `NMMMo            oMMM:                                        
+                  `sMMMm             -oo:            `NMMy                                          
+                 .hMMMMM+                            +MMN`        `.-::.              `            
+                -mMMyoMMN.         /hho       .:syhhomMMs       -smNMMMNy  `shysssssyhdho          
+               :mMMs``dMMd`        NMMm     .smMNdhdMMMM.     `sNMNs:/MMM. `ydmmmmddMMMN+          
+              +NMMs   -MMMs       :MMM/    +NMNs-  .MMMy     .dMMd- -yMMy    `````/hMMy-            
+            `yMMMmosyhdMMMM+      yMMm    yMMN:   `yMMM/     dMMN+odNMd/        :hMNy:              
+           -dMMMMMMmmdhyhMMM+     NMMo   /MMM-   :dMMMM-    :MMMMNmho-``:/    :hNMh-                
+          +NMMm//-..``  `hMMMo`  -MMM/   yMMm``:hNMyMMM+.-- :MMMy.` `-omMd` /dMMmo/+oooo/`          
+         oMMMh.          `yMMMm/ :MMMs   +MMMmmMNh: hMMNNNy  yMMMmhdmNMm+`:dMMMMNNNNmNMMMo          
+         :yh+`            `/dNNs `ydh:    :shys/.   `+yso-`   :shddhy+-` oNMNho:-..```.-/`  
+ 
+
+- Check out my v3rmillion: https://v3rmillion.net/member.php?action=profile&uid=482542
+ 
+--]]
