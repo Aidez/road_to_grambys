@@ -1,0 +1,173 @@
+local Key = "G"
+
+if string.len(Key) == 1 then
+    Key = string.upper(Key)
+end
+if Enum.KeyCode[Key] == nil then
+    return
+end
+
+if game.PlaceId ~= 5796917097 then
+    return
+end
+
+repeat wait() until game.Players ~= nil
+repeat wait() until game.Players.LocalPlayer ~= nil
+repeat wait() until game.Workspace ~= nil
+repeat wait() until game.Workspace.CurrentCamera ~= nil
+
+local Drawings = {}
+local Active = true
+
+local function checkproperty(Object, Property)
+    local toreturn = pcall(function()
+        if typeof(Object[Property]) == "Instance" then
+            error()
+        end
+    end)
+    return toreturn
+end
+
+local function mark(part, txt, startinvis, color)
+    if part == nil or txt == nil then
+        return
+    end
+    if not checkproperty(part, "Position") then
+        print("Cannot mark, selected object has no position property")
+    end
+    local TableAddition = {}
+    local NewDrawing = Drawing.new("Text")
+    NewDrawing.Size = 20
+    if startinvis == false or startinvis == nil then
+        NewDrawing.Visible = true
+    elseif startinvis == true then
+        NewDrawing.Visible = false
+    end
+    NewDrawing.Outline = true
+    NewDrawing.Center = true
+    NewDrawing.Text = tostring(txt)
+    if color ~= nil then
+        NewDrawing.OutlineColor = Color3.new(color.R/255,color.G/255,color.B/255)
+    else
+        NewDrawing.OutlineColor = Color3.new(255,0,0)
+    end
+    TableAddition.Part = part
+    TableAddition.Drawing = NewDrawing
+    table.insert(Drawings, TableAddition)
+    part.AncestryChanged:Connect(function(old, new)
+        if old == nil or new == nil then
+            part:Destroy()
+        end
+    end)
+end
+
+
+game:GetService("RunService").Stepped:Connect(function()
+    for i,v in pairs(Drawings) do
+        if v.Drawing ~= nil then
+            if v.Part ~= nil and v.Part.Parent ~= nil then
+                if game.Players:FindFirstChild(v.Part.Parent.Name) then
+                    local ScreenPos,OnScreen = game.Workspace.CurrentCamera:WorldToScreenPoint(v.Part.Position)
+                    if OnScreen and Active then
+                        local Character = v.Part.Parent
+                        if Character:FindFirstChild("Teeth") then
+                            if Character.Teeth:FindFirstChild("NumTeeth") then
+                                local TeethAmount = Character.Teeth.NumTeeth.Value
+                                if math.floor(TeethAmount) == 0 then
+                                    v.Drawing.Visible = false
+                                elseif math.floor(TeethAmount) ~= 0 then
+                                    v.Drawing.Visible = true
+                                    v.Drawing.Text = Character.Name.." ("..TeethAmount.." TEETH)"
+                                end
+                            else
+                                v.Drawing.Visible = true
+                                v.Drawing.Text = Character.Name
+                            end
+                        else
+                            v.Drawing.Visible = true
+                            v.Drawing.Text = Character.Name
+                        end
+                        v.Drawing.Position = Vector2.new(ScreenPos.X,ScreenPos.Y)
+                    elseif OnScreen == false then
+                        v.Drawing.Visible = false
+                    end
+                else
+                    v.Drawing.Visible = false
+                    v.Drawing:Remove()
+                    table.remove(Drawings, i)
+                end
+            else
+                v.Drawing.Visible = false
+                v.Drawing:Remove()
+                table.remove(Drawings, i)
+            end
+        end
+    end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(keyobject, shithappening)
+    if keyobject.KeyCode == Enum.KeyCode[Key] and not shithappening then 
+        Active = not Active
+        for i,v in pairs(Drawings) do
+            if Active then
+                v.Drawing.Visible = true
+            else
+                v.Drawing.Visible = false
+            end
+        end
+    end
+end)
+
+repeat wait() until game.Workspace:FindFirstChild("Characters")
+repeat wait() until game:IsLoaded()
+
+for i,char in pairs(game.Workspace.Characters:GetChildren()) do
+    spawn(function()
+        if char.Name ~= game.Players.LocalPlayer.Name then
+            repeat wait() until char:FindFirstChild("Head")
+            repeat wait() until char:FindFirstChild("Teeth")
+            repeat wait() until char.Teeth:FindFirstChild("NumTeeth")
+            local TeethAmount = char.Teeth.NumTeeth.Value
+            if Active then
+                mark(char["Head"], char.Name.." ("..TeethAmount.." TEETH)")
+            elseif not Active or math.floor(TeethAmount) == 0 then
+                mark(char["Head"], char.Name.." ("..TeethAmount.." TEETH)", true)
+            end
+        end
+    end)
+end
+
+game.Workspace.Characters.ChildAdded:Connect(function(char)
+    if char.Name ~= game.Players.LocalPlayer.Name then
+        repeat wait() until char:FindFirstChild("Head")
+        repeat wait() until char:FindFirstChild("Teeth")
+        repeat wait() until char.Teeth:FindFirstChild("NumTeeth")
+        local TeethAmount = char.Teeth.NumTeeth.Value
+        if Active then
+            mark(char["Head"], char.Name.." ("..TeethAmount.." TEETH)")
+        elseif not Active then
+            mark(char["Head"], char.Name.." ("..TeethAmount.." TEETH)", true)
+        end
+    end
+end)
+
+
+--[[
+ 
+                                                        ..                                          
+                                     /yys.            `hMM/                                        
+                    :ys:            `NMMMo            oMMM:                                        
+                  `sMMMm             -oo:            `NMMy                                          
+                 .hMMMMM+                            +MMN`        `.-::.              `            
+                -mMMyoMMN.         /hho       .:syhhomMMs       -smNMMMNy  `shysssssyhdho          
+               :mMMs``dMMd`        NMMm     .smMNdhdMMMM.     `sNMNs:/MMM. `ydmmmmddMMMN+          
+              +NMMs   -MMMs       :MMM/    +NMNs-  .MMMy     .dMMd- -yMMy    `````/hMMy-            
+            `yMMMmosyhdMMMM+      yMMm    yMMN:   `yMMM/     dMMN+odNMd/        :hMNy:              
+           -dMMMMMMmmdhyhMMM+     NMMo   /MMM-   :dMMMM-    :MMMMNmho-``:/    :hNMh-                
+          +NMMm//-..``  `hMMMo`  -MMM/   yMMm``:hNMyMMM+.-- :MMMy.` `-omMd` /dMMmo/+oooo/`          
+         oMMMh.          `yMMMm/ :MMMs   +MMMmmMNh: hMMNNNy  yMMMmhdmNMm+`:dMMMMNNNNmNMMMo          
+         :yh+`            `/dNNs `ydh:    :shys/.   `+yso-`   :shddhy+-` oNMNho:-..```.-/`  
+ 
+- Check out my v3rmillion: https://v3rmillion.net/member.php?action=profile&uid=482542
+ 
+--]]
